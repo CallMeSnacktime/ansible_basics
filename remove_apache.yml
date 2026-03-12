@@ -1,19 +1,23 @@
 ---
 
 - hosts: all
-  become: true 
-  tasks: 
+  become: true
+  tasks:
 
-  - name: update repository index
+  - name: remove apache and php on Ubuntu servers
     apt:
+      name:
+        - apache2
+        - libapache2-mod-php
+      state: absent
       update_cache: yes
+    when: ansible_distribution == "Ubuntu"
 
-  - name: remove apache2 package
-    apt: 
-      name: apache2
+  - name: remove httpd and php on RHEL9 OS
+    dnf:
+      name:
+        - httpd
+        - php
       state: absent
-
-  - name: remove php suport for apache
-    apt:
-      name: libapache2-mod-php
-      state: absent
+      update_cache: yes
+    when: ansible_distribution == "RedHat"
