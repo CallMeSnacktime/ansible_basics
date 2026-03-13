@@ -18,6 +18,8 @@
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
 
+##################################################################################
+
 - hosts: work_stations
   become: true
   tasks:
@@ -26,12 +28,15 @@
       package:
         name: unzip
 
-    - name: install terraform
-      unarchive:
-        src: https://releases.hashicorp.com/terraform/1.14.7/terraform_1.14.7_linux_arm64.zip
-        dest: /usr/local/bin
-        owner: root
-        group: root
+    #Don't feel like fumbling around with the link       
+        #- name: install terraform
+        # unarchive:
+        #  src: https://releases.hashicorp.com/terraform/1.14.7/terraform_1.14.7_linux_arm64.zip
+        #dest: /usr/local/bin
+        #owner: root
+        #group: root
+
+##################################################################################
 
 - hosts: web_servers
   become: true
@@ -55,6 +60,34 @@
       state: latest
     when: ansible_distribution == "RedHat"
 
+  - name: start httpd (RHEL)
+    tags: apache, centos, httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "RedHat"
+
+  - name: hange e-mail address for admin
+    tags: apache, centos, httpd
+    lineinfile: 
+      path: /etc/httpd/conf/httpd.conf
+        # '^' symbol lets ansible know that you want to replace a whole line. Quote has to be at the beginning of the line.  
+      regexp: '^Server Admin'
+      line: ServerAdmin somebody@somewhere.net
+    when: ansible_distribution == "RedHat"
+    # tracks the state of httpd
+    register: httpd
+
+  - name: restart httpd (RHEL)
+    tags: apache,centos,httpd
+    service:
+      name: httpd
+      state: restarted
+    # pulls from the register settting above
+    when: httpd.changed
+
+
   - name: copy default html file for site
     tags: apache,apache2,http
     copy:
@@ -64,6 +97,7 @@
       group: root
       mode: 0644
 
+##################################################################################
 
 - hosts: db_servers
   become: true
@@ -82,6 +116,8 @@
       name: mariadv-server
       state: latest
     when: ansible_distribution == "Ubuntu"
+
+##################################################################################
 
 - hosts: file_servers
   become: true
